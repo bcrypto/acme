@@ -216,3 +216,12 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Specific files
+.DS_Store
+
+# Output folders
+output/
+
+# Test configs
+test/

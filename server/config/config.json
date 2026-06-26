@@ -1,0 +1,234 @@
+{
+  "port": 8430,
+  "save_requests_dir": "output",
+  "endpoints": [
+    {
+      "endpoint": "/dir",
+      "method": "GET",
+      "response": {
+        "newNonce": "http://localhost:8430/newNonce",
+        "newAccount": "http://localhost:8430/newAccount",
+        "newOrder": "http://localhost:8430/newOrder",
+        "newAuthz": "http://localhost:8430/newAuthz", 
+        "revokeCert": "http://localhost:8430/revokeCert",
+        "keyChange": "http://localhost:8430/keyChange"
+      },
+      "status": 200
+    },
+    {
+      "endpoint": "/newNonce",
+      "method": "GET",
+      "response": null,
+      "status": 200,
+      "headers": {
+        "Replay-Nonce": "U2l4dGVlbkJ5dGVOb25jZQ",
+        "Cache-Control": "no-store",
+        "Link": "<https://example.com/acme/directory>;rel=\"index\""
+      }
+    },
+    {
+      "endpoint": "/newAccount",
+      "method": "POST",
+      "response": {
+        "status": "valid",
+        "contact": [
+          "mailto:cert-admin@example.org"
+        ],
+        "termsOfServiceAgreeed": true,
+        "externalAccountBinding": "JWS(externalAccount)",
+        "orders": "http://localhost:8430/orders"
+      },
+      "status": 201,
+      "headers": {
+        "Replay-Nonce": "U2l4dGVlbkJ5dGVOb25jZQ", 
+        "Link": "<https://example.com/acme/directory>;rel=\"index\"",
+        "Location": "http://localhost:8430/id"
+      }
+    },
+    {
+      "endpoint": "/id",
+      "method": "POST",
+      "response": {
+        "status": "valid",
+        "contact": [
+          "mailto:cert-admin@example.org",
+          "mailto:admin@example.org"
+        ],
+        "termsOfServiceAgreeed": true,
+        "externalAccountBinding": "JWS(externalAccount)",
+        "orders": "http://localhost:8430/orders"
+      },
+      "status": 200,
+      "headers": {
+        "Replay-Nonce": "U2l4dGVlbkJ5dGVOb25jZQ", 
+        "Link": "<https://example.com/acme/directory>;rel=\"index\"",
+        "Location": "http://localhost:8430/id"
+      }
+    },
+    {
+      "endpoint": "/orders",
+      "method": "POST",
+      "response": {
+        "orders": [
+          "http://localhost:8430/order"
+        ]
+      },
+      "status": 200,
+      "headers": {
+        "Replay-Nonce": "U2l4dGVlbkJ5dGVOb25jZQ", 
+        "Link": "<https://example.com/acme/directory>;rel=\"index\", <http://localhost:8430/orders?cursor=2> ;rel =\"next\""
+      }
+    },
+    {
+      "endpoint": "/newOrder",
+      "method": "POST",
+      "response": {
+        "status": "pending",
+        "expires": "2040-01-08T00:04:00+04:00",
+        "identifiers": [
+          { "type": "dns", "value": "www.example.org" },
+          { "type": "dns", "value": "example.org" }
+        ],
+        "notBefore": "2016-01-01T00:04:00+04:00",
+        "notAfter": "2046-01-08T00:04:00+04:00",
+        "authorizations": ["http://localhost:8430/auth"],
+        "finalize": "http://localhost:8430/fin"
+      },
+      "status": 201,
+      "headers": {
+        "Replay-Nonce": "U2l4dGVlbkJ5dGVOb25jZQ", 
+        "Link": "<https://example.com/acme/directory>;rel=\"index\"",
+        "Location": "http://localhost:8430/order"
+      }
+    },
+    {
+      "endpoint": "/order",
+      "method": "POST",
+      "response": {
+        "status": "ready",
+        "expires": "2040-01-08T00:04:00+04:00",
+        "identifiers": [
+          { "type": "dns", "value": "www.example.org" },
+          { "type": "dns", "value": "example.org" }
+        ],
+        "notBefore": "2016-01-01T00:04:00+04:00",
+        "notAfter": "2046-01-08T00:04:00+04:00",
+        "authorizations": ["http://localhost:8430/auth"],
+        "finalize": "http://localhost:8430/fin"
+      },
+      "status": 200,
+      "headers": {
+        "Replay-Nonce": "U2l4dGVlbkJ5dGVOb25jZQ",
+        "Link": "<https://example.com/acme/directory>;rel=\"index\""
+      }
+    },
+    {
+      "endpoint": "/auth",
+      "method": "POST",
+      "response": {
+        "identifier": { "type": "dns", "value": "www.example.org" },
+        "status": "pending",
+        "expires": "2040-01-08T00:04:00+04:00",
+        "challenges": [
+          {
+            "type": "http-01",
+            "url": "http://localhost:8430/auth0",
+            "status": "pending",
+            "token": "uQpSjlRb4vQVCjVYAyyUWg"
+          }
+        ],
+        "wildcard": false
+      },
+      "status": 200,
+      "headers": {
+        "Replay-Nonce": "U2l4dGVlbkJ5dGVOb25jZQ",
+        "Link": "<https://example.com/acme/directory>;rel=\"index\""
+      }
+    },
+    {
+      "endpoint": "/auth0",
+      "method": "POST",
+      "response": null,
+      "status": 200,
+      "headers": {
+        "Replay-Nonce": "U2l4dGVlbkJ5dGVOb25jZQ",
+        "Link": "<https://example.com/acme/directory>; rel=\"index\", <http://host.docker.internal:8430/auth>; rel=\"up\""
+      }
+    },
+    {
+      "endpoint": "/fin",
+      "method": "POST",
+      "response": {
+        "status": "valid",
+        "expires": "2040-01-08T00:04:00+04:00",
+        "identifiers": [
+          { "type": "dns", "value": "www.example.org" },
+          { "type": "dns", "value": "example.org" }
+        ],
+        "notBefore": "2016-01-01T00:04:00+04:00",
+        "notAfter": "2046-01-08T00:04:00+04:00",
+        "authorizations": ["http://localhost:8430/auth"],
+        "finalize": "http://localhost:8430/fin",
+        "certificate": "http://localhost:8430/cert"
+      },
+      "status": 200,
+      "headers": {
+        "Replay-Nonce": "U2l4dGVlbkJ5dGVOb25jZQ",
+        "Link": "<https://example.com/acme/directory>;rel=\"index\""
+      }
+    },
+    {
+      "endpoint": "/cert",
+      "method": "POST",
+      "response": "-----BEGIN CERTIFICATE-----\n[End-entity certificate contents]\n-----END CERTIFICATE-----",
+      "status": 200,
+      "headers": {
+        "Replay-Nonce": "U2l4dGVlbkJ5dGVOb25jZQ",
+        "Content-Type": "application/pem-certificate-chain",
+        "Link": "<https://example.com/acme/directory>;rel=\"index\""
+      }
+    },
+    {
+      "endpoint": "/revokeCert",
+      "method": "POST",
+      "response": null,
+      "status": 200,
+      "headers": {
+        "Replay-Nonce": "U2l4dGVlbkJ5dGVOb25jZQ",
+        "Link": "<https://example.com/acme/directory>;rel=\"index\""
+      }
+    },
+    {
+      "endpoint": "/newAuthz",
+      "method": "POST",
+      "response": {
+        "identifier": { "type": "dns", "value": "www.example.org" },
+        "status": "pending",
+        "challenges": [
+          {
+            "type": "http-01",
+            "url": "http://localhost:8430/auth0",
+            "status": "pending",
+            "token": "uQpSjlRb4vQVCjVYAyyUWg"
+          }
+        ]
+      },
+      "status": 201,
+      "headers": {
+        "Replay-Nonce": "U2l4dGVlbkJ5dGVOb25jZQ", 
+        "Link": "<https://example.com/acme/directory>;rel=\"index\"",
+        "Location": "http://localhost:8430/authz0"
+      }
+    },
+    {
+      "endpoint": "/keyChange",
+      "method": "POST",
+      "response": null,
+      "status": 200,
+      "headers": {
+        "Replay-Nonce": "U2l4dGVlbkJ5dGVOb25jZQ",
+        "Link": "<https://example.com/acme/directory>;rel=\"index\""
+      }
+    }
+  ]
+}

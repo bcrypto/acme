@@ -1,0 +1,68 @@
+{
+  "directory_url": "http://localhost:8430/dir",
+  "save_answers_dir": "output",
+  "private_key": "",
+  "public_key": "",
+  "requests": [
+    {
+      "endpoint": "http://localhost:8430/dir",
+      "method": "GET",
+      "payload": null,
+      "outfile": "directory.json"
+    },
+    {
+      "endpoint": "{newNonce}",
+      "method": "GET",
+      "payload": null,
+      "newNonce": {
+        "file": "directory.json",
+        "jsonpath": "body.newNonce"
+      },
+      "outfile": "nonce.json"
+    },
+    {
+      "endpoint": "{newAccount}",
+      "method": "POST",
+      "jws_header": {
+        "alg":"BIGNS256",
+        "jwk":"JWK",
+        "nonce":"{nonce}",
+        "url":"{newAccount}"
+      },
+      "payload": {
+        "onlyReturnExisting": true
+      },
+      "newAccount": {
+        "file": "directory.json",
+        "jsonpath": "body.newAccount"
+      },
+      "nonce": {
+        "file": "nonce.json",
+        "jsonpath": "headers.Replay-Nonce"
+      },
+      "outfile": "account.json"
+    },
+    {
+      "endpoint": "{id}",
+      "method": "POST",
+      "jws_header": {
+        "alg":"BIGNS256",
+        "kid":"{id}",
+        "nonce":"{nonce}",
+        "url":"{id}"
+      },
+      "payload": {
+        "status": "deactivated"
+      },
+      "id": {
+        "file": "account.json",
+        "jsonpath": "headers.Location"
+      },
+      "nonce": {
+        "file": "nonce.json",
+        "jsonpath": "headers.Replay-Nonce"
+      },
+      "outfile": "id.json"
+    }
+  ]
+}
