@@ -148,7 +148,12 @@
     {
       "endpoint": "/auth0",
       "method": "POST",
-      "response": null,
+      "response": {
+        "type": "http-01",
+        "url": "http://host.docker.internal:8430/auth0",
+        "status": "valid",
+        "token": "uQpSjlRb4vQVCjVYAyyUWg"
+      },
       "status": 200,
       "headers": {
         "Replay-Nonce": "U2l4dGVlbkJ5dGVOb25jZQ",
