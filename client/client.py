@@ -5,7 +5,62 @@ import os
 import string
 
 import requests
+try:
+    import bee2py
+except ImportError:
+    bee2py = None
 
+class BignSigner:
+    def __init__(self):
+        if bee2py is not None:
+            self.privkey = bee2py.memAlloc(64)
+            self.hash = bee2py.memAlloc(64)
+            self.der = bee2py.memAlloc(64)
+            self.sig = bee2py.memAlloc(64+32)
+            self.params = bee2py.bign_params()
+            bee2py.bignParamsStd(self.params, "1.2.112.0.2.0.34.101.45.3.3")
+            count = bee2py.new_sizeTarr(1)
+            bee2py.sizeTarr_setitem(count, 0, 64)
+            bee2py.bignOidToDER(bee2py.vp2op(self.der), count, 
+                "1.2.112.0.2.0.34.101.77.13")
+            self.count = bee2py.sizeTarr_getitem(count, 0)
+            bee2py.delete_sizeTarr(count)
+
+    def setkey(self, key: bytes):
+        if bee2py is not None:
+            bee2py.hexTo(self.privkey, key.hex()) 
+
+    def sign(self, value: bytes):
+        if bee2py is not None:
+            n = len(value)
+            v = bee2py.memAlloc(n)
+            bee2py.hexTo(v, value.hex()) 
+            bee2py.bashHash(bee2py.vp2op(self.hash), 256, v, n)
+            err = bee2py.bignSign2(
+            bee2py.vp2op(self.sig), 
+            self.params, 
+            bee2py.vp2op(self.der), 
+            self.count, 
+            bee2py.vp2op(self.hash), 
+            bee2py.vp2op(self.privkey), 
+            None, 0)
+            bee2py.memFree(v)
+            v = None
+            if err != 0:
+                print(err)
+            sbuf = "0"*200
+            sbuf = bee2py.hexFrom(sbuf, self.sig, 96)
+            return bytes.fromhex(sbuf)
+        else:
+            return value
+
+    def __del__(self):
+        if bee2py is not None:
+            bee2py.memFree(self.privkey)
+            bee2py.memFree(self.hash)
+            bee2py.memFree(self.der)
+            bee2py.memFree(self.sig)
+        
 def load_config(path):
     with open(path, "r") as f:
         return json.load(f)
@@ -47,6 +102,14 @@ def replace_placeholders(text:str, config, outdir) -> str:
             replacement[p] = value
     return text.format(**replacement)
 
+def b64url_decode(data: str) -> bytes:
+    """Декодирование base64url без паддинга."""
+    # восстановить паддинг
+    padding = 4 - (len(data) % 4)
+    if padding != 4:
+        data += "=" * padding
+    return base64.urlsafe_b64decode(data)
+
 def b64url_encode(data: bytes) -> str:
     """Base64url без паддинга."""
     return base64.urlsafe_b64encode(data).rstrip(b'=').decode('ascii')
@@ -57,16 +120,17 @@ def dump_str(s:str)->str:
 def dump_dict(data:dict)->str:
     return dump_str(json.dumps(data, ensure_ascii=False))
 
-def jws_encode(entry:dict, config:dict, outdir:str)->dict:
+def jws_encode(entry:dict, config:dict, outdir:str, signer:BignSigner)->dict:
     jws_header = entry.get('jws_header', {})
     header = {name: replace_placeholders(value, entry, outdir) 
-        for name, value in jws_header.items() if type(value) is str }
+            if type(value) is str else value
+        for name, value in jws_header.items() }
     # print(header)
     protected = dump_dict(header)
     payload = dump_dict(entry["payload"])
     body = protected + '.' + payload
     binary = body.encode('utf-8')
-    signature = b64url_encode(binary)
+    signature = b64url_encode(signer.sign(binary))
     return {
         'protected': protected,
         'payload': payload,
@@ -76,7 +140,7 @@ def jws_encode(entry:dict, config:dict, outdir:str)->dict:
 def is_json(resp):
     return resp.headers.get("Content-Type","").startswith("application/json")
 
-def run_tests(config, outdir):
+def run_tests(config, outdir, signer):
     os.makedirs(outdir, exist_ok=True)
 
     head = {
@@ -105,7 +169,7 @@ def run_tests(config, outdir):
             elif method == "POST":
                 if "jws_header" in entry:
                     head["Content-Type"] = "application/jose+json"
-                    payload = jws_encode(entry, config, outdir)
+                    payload = jws_encode(entry, config, outdir, signer)
 
                 resp = requests.post(url, headers=head, json=payload, 
                     verify=False)
@@ -138,4 +202,7 @@ if __name__ == "__main__":
     config = load_config(config_path)
     endpoints = config.get("requests", [])
     outdir = config.get("save_answers_dir")
-    run_tests(endpoints, outdir)
+    signer = BignSigner()
+    pk = b64url_decode(config.get("private_key"))
+    signer.setkey(pk)
+    run_tests(endpoints, outdir, signer)
