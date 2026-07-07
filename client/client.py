@@ -151,17 +151,58 @@ def dump_str(s:str)->str:
 def dump_dict(data:dict)->str:
     return dump_str(json.dumps(data, ensure_ascii=False))
 
-def jws_encode(entry:dict, config:dict, outdir:str, signer:BignSigner)->dict:
+def jws_encode(entry:dict, outdir:str, signer:BignSigner)->dict:
     jws_header = entry.get('jws_header', {})
     header = {name: replace_placeholders(value, entry, outdir) 
             if type(value) is str else value
         for name, value in jws_header.items() }
-    # print(header)
     protected = dump_dict(header)
     payload = dump_dict(entry["payload"])
     body = protected + '.' + payload
     binary = body.encode('utf-8')
     sig = signer.sign(binary)
+    signature = b64url_encode(sig)
+    return {
+        'protected': protected,
+        'payload': payload,
+        'signature': signature
+    }
+
+def imito(body:bytes, key:bytes)->bytes:
+    if bee2py is not None:
+        keylen = len(key)
+        imitokey = bee2py.memAlloc(keylen)
+        bee2py.hexTo(imitokey, key.hex()) 
+        mac = bee2py.memAlloc(32)
+        n = len(body)
+        v = bee2py.memAlloc(n)
+        bee2py.hexTo(v, body.hex()) 
+        err = bee2py.beltHMAC(bee2py.vp2op(mac), v, n, bee2py.vp2op(imitokey), 
+            keylen)
+        if err != 0:
+            print(err)
+        sbuf = "0"*100
+        sbuf = bee2py.hexFrom(sbuf, mac, 32)
+        bee2py.memFree(imitokey)
+        bee2py.memFree(v)
+        bee2py.memFree(mac)
+        return bytes.fromhex(sbuf)
+    else:
+        return body
+
+def sign_external(entry:dict, outdir:str)->dict:
+    ext = entry.get('payload', {}).get('externalAccountBinding', {})
+    jws_header = ext.get('protected', {})
+    header = {name: replace_placeholders(value, entry, outdir) 
+            if type(value) is str else value
+        for name, value in jws_header.items() }
+    protected = dump_dict(header)
+    payload = dump_dict(entry["payload"])
+    body = protected + '.' + payload
+    binary = body.encode('utf-8')
+    key = ext.get("key", "")
+    binkey = b64url_decode(key)
+    sig = imito(binary, binkey)
     signature = b64url_encode(sig)
     return {
         'protected': protected,
@@ -199,9 +240,12 @@ def run_tests(config, outdir, signer):
             if method == "GET":
                 resp = requests.get(url, headers=head, verify=False)
             elif method == "POST":
+                ext = "externalAccountBinding"
+                if ext in payload:
+                    payload[ext] = sign_external(entry, outdir)
                 if "jws_header" in entry:
                     head["Content-Type"] = "application/jose+json"
-                    payload = jws_encode(entry, config, outdir, signer)
+                    payload = jws_encode(entry, outdir, signer)
 
                 resp = requests.post(url, headers=head, json=payload, 
                     verify=False)

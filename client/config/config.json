@@ -38,7 +38,19 @@
           "mailto:admin@example.org"
         ],
         "termsOfServiceAgreeed": true,
-        "externalAccountBinding": "JWS(externalAccount)"
+        "externalAccountBinding": {
+          "protected": {
+            "alg": "hmac-hbelt",
+            "kid": "externalID",
+            "url": "{newAccount}"
+          },
+          "payload": {
+            "qty": "OKP",
+            "crv": "BIGNS256", 
+            "x": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL3t785vrpK3BA1MybmDqmdhIujulXN3_9Jv-g7i3XNp2srMABv47dLivGGzs0GrsKuP0aD35oKxgXYD5Hr_Jqg"
+          },
+          "key": "AQAAAAAAAAAAAAAAAAAAAA"
+        }
       },
       "newAccount": {
         "file": "directory.json",
