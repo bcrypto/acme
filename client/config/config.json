@@ -320,6 +320,31 @@
         "jsonpath": "headers.Replay-Nonce"
       },
       "outfile": "keyChange.json"
+    },
+    {
+      "endpoint": "http://localhost:8430/error",
+      "method": "POST",
+      "jws_header": {
+        "alg":"BIGNS256",
+        "kid":"{id}",
+        "nonce":"{nonce}",
+        "url":"http://localhost:8430/error"
+      },
+      "payload": {
+        "contact": [
+          "mailto:cert-admin@example.org",
+          "mailto:admin@example.org"
+        ]
+      },
+      "id": {
+        "file": "account.json",
+        "jsonpath": "headers.Location"
+      },
+      "nonce": {
+        "file": "nonce.json",
+        "jsonpath": "headers.Replay-Nonce"
+      },
+      "outfile": "error.json"
     }
   ]
 }
