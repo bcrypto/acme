@@ -11,45 +11,76 @@ except ImportError:
     bee2py = None
 
 class BignSigner:
-    def __init__(self):
+    def __init__(self, level):
+        self.level = level
         if bee2py is not None:
             self.privkey = bee2py.memAlloc(64)
             self.hash = bee2py.memAlloc(64)
             self.der = bee2py.memAlloc(64)
             self.sig = bee2py.memAlloc(64+32)
-            self.params = bee2py.bign_params()
-            bee2py.bignParamsStd(self.params, "1.2.112.0.2.0.34.101.45.3.3")
             count = bee2py.new_sizeTarr(1)
             bee2py.sizeTarr_setitem(count, 0, 64)
-            bee2py.bignOidToDER(bee2py.vp2op(self.der), count, 
-                "1.2.112.0.2.0.34.101.77.13")
+            self.params = bee2py.bign_params()
+            if self.level == 128:
+                bee2py.bignParamsStd(self.params, "1.2.112.0.2.0.34.101.45.3.1")
+                bee2py.bignOidToDER(bee2py.vp2op(self.der), count, 
+                    "1.2.112.0.2.0.34.101.31.81")
+            elif self.level == 192:
+                bee2py.bignParamsStd(self.params, "1.2.112.0.2.0.34.101.45.3.2")
+                bee2py.bignOidToDER(bee2py.vp2op(self.der), count, 
+                    "1.2.112.0.2.0.34.101.77.12")
+            elif self.level == 256:
+                bee2py.bignParamsStd(self.params, "1.2.112.0.2.0.34.101.45.3.3")
+                bee2py.bignOidToDER(bee2py.vp2op(self.der), count, 
+                    "1.2.112.0.2.0.34.101.77.13")
+            else:
+                raise ValueError("Incorrect Bign level")
             self.count = bee2py.sizeTarr_getitem(count, 0)
             bee2py.delete_sizeTarr(count)
 
     def setkey(self, key: bytes):
+        if len(key) * 8 != self.level:
+            raise ValueError("Incorrect key size")
         if bee2py is not None:
             bee2py.hexTo(self.privkey, key.hex()) 
+            print(f"Private key: {key.hex()}")
+            code = b64url_encode(key)
+            print(f"Private key (b64): {code}")
+            pubkey = bee2py.memAlloc(128)
+            sbuf = "0"*1000
+            bee2py.bignPubkeyCalc(bee2py.vp2op(pubkey), self.params, 
+                bee2py.vp2op(self.privkey))
+            sbuf = bee2py.hexFrom(sbuf, pubkey, self.level // 2)
+            print(f"Public key: {sbuf}")
+            pk = bytes.fromhex(sbuf)
+            code = b64url_encode(pk)
+            print(f"Public key (b64): {code}")
 
     def sign(self, value: bytes):
         if bee2py is not None:
             n = len(value)
             v = bee2py.memAlloc(n)
             bee2py.hexTo(v, value.hex()) 
-            bee2py.bashHash(bee2py.vp2op(self.hash), 256, v, n)
+            if self.level == 128:
+                bee2py.beltHash(bee2py.vp2op(self.hash), v, n)
+            elif self.level == 192:
+                bee2py.bashHash(bee2py.vp2op(self.hash), 192, v, n)
+            elif self.level == 256:
+                bee2py.bashHash(bee2py.vp2op(self.hash), 256, v, n)
             err = bee2py.bignSign2(
-            bee2py.vp2op(self.sig), 
-            self.params, 
-            bee2py.vp2op(self.der), 
-            self.count, 
-            bee2py.vp2op(self.hash), 
-            bee2py.vp2op(self.privkey), 
-            None, 0)
+                bee2py.vp2op(self.sig), 
+                self.params, 
+                bee2py.vp2op(self.der), 
+                self.count, 
+                bee2py.vp2op(self.hash), 
+                bee2py.vp2op(self.privkey), 
+                None, 0)
             bee2py.memFree(v)
             v = None
             if err != 0:
                 print(err)
             sbuf = "0"*200
-            sbuf = bee2py.hexFrom(sbuf, self.sig, 96)
+            sbuf = bee2py.hexFrom(sbuf, self.sig, self.level * 3 // 8)
             return bytes.fromhex(sbuf)
         else:
             return value
@@ -130,7 +161,8 @@ def jws_encode(entry:dict, config:dict, outdir:str, signer:BignSigner)->dict:
     payload = dump_dict(entry["payload"])
     body = protected + '.' + payload
     binary = body.encode('utf-8')
-    signature = b64url_encode(signer.sign(binary))
+    sig = signer.sign(binary)
+    signature = b64url_encode(sig)
     return {
         'protected': protected,
         'payload': payload,
@@ -202,7 +234,7 @@ if __name__ == "__main__":
     config = load_config(config_path)
     endpoints = config.get("requests", [])
     outdir = config.get("save_answers_dir")
-    signer = BignSigner()
     pk = b64url_decode(config.get("private_key"))
+    signer = BignSigner(len(pk) * 8)
     signer.setkey(pk)
     run_tests(endpoints, outdir, signer)

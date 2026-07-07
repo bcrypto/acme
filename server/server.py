@@ -5,15 +5,21 @@ import os
 import base64
 
 from flask import Flask, jsonify, make_response, request
+try:
+    import bee2py
+except ImportError:
+    bee2py = None
 
 app = Flask(__name__)
 SAVE_DIR = None
+
+KEYS = {}
 
 def load_config(path):
     with open(path, "r") as f:
         return json.load(f)
 
-def save_request(endpoint, req):
+def save_request(endpoint, req, resp_hdrs):
     if not SAVE_DIR:
         return
     os.makedirs(SAVE_DIR, exist_ok=True)
@@ -32,7 +38,7 @@ def save_request(endpoint, req):
     }
 
     if data["headers"].get("Content-Type", "") == "application/jose+json":
-        jws = jws_decode(data["json"])
+        jws = jws_decode(data["json"], resp_hdrs)
         data.update(jws)
 
     with open(filepath, "w") as f:
@@ -50,7 +56,7 @@ def register_endpoints(config):
         headers = entry.get("headers", {})
 
         def handler(response=data, status=code, hdrs=headers, ep=endpoint):
-            save_request(ep, request)
+            save_request(ep, request, hdrs)
             resp = make_response(jsonify(response), status)
             for k, v in hdrs.items():
                 resp.headers[k] = v
@@ -80,17 +86,78 @@ def load_dict(token:str)->dict:
         return ""
     return json.loads(s)
 
-def jws_decode(body:dict) -> dict:
+def jws_decode(body:dict, resp_hdrs:dict) -> dict:
     if len(body) != 3:
         return {}
     header = load_dict(body['protected'])
     payload = load_dict(body['payload'])
-    #data = body['protected'] + '.' + body['payload']
-    #signature = b64url_decode(body['signature'])
+    jwk = header.get("jwk")
+    if jwk is not None:
+        KEYS[resp_hdrs["Location"]] = jwk["x"]
+        print(f"Keys: {KEYS}")
+        kid = resp_hdrs["Location"]
+    else:
+        kid = header.get("kid")
+    data = body['protected'] + '.' + body['payload']
+    signature = b64url_decode(body['signature'])
+    valid = verify(kid, data, signature)
     return {
         "protected": header,
-        "payload": payload
+        "payload": payload,
+        "signature": valid
     }
+
+def verify(kid:str, data:str, signature:bytes):
+    if bee2py is not None:
+        pk = KEYS.get(kid)
+        if pk is None:
+            return False
+        key = b64url_decode(pk)
+        level = len(key) * 2
+        pubkey = bee2py.memAlloc(128)
+        bee2py.hexTo(pubkey, key.hex())
+        hash = bee2py.memAlloc(64)
+        der = bee2py.memAlloc(64)
+        sig = bee2py.memAlloc(64+32)
+        bee2py.hexTo(sig, signature.hex()) 
+        params = bee2py.bign_params()
+        count = bee2py.new_sizeTarr(1)
+        bee2py.sizeTarr_setitem(count, 0, 64)
+        value = data.encode('utf-8')
+        n = len(value)
+        v = bee2py.memAlloc(n)
+        bee2py.hexTo(v, value.hex()) 
+        if level == 128:
+            bee2py.bignParamsStd(params, "1.2.112.0.2.0.34.101.45.3.1")
+            bee2py.bignOidToDER(bee2py.vp2op(der), count, 
+                "1.2.112.0.2.0.34.101.31.81")
+            bee2py.beltHash(bee2py.vp2op(hash), v, n)
+        elif level == 192:
+            bee2py.bignParamsStd(params, "1.2.112.0.2.0.34.101.45.3.2")
+            bee2py.bignOidToDER(bee2py.vp2op(der), count, 
+                "1.2.112.0.2.0.34.101.77.12")
+            bee2py.bashHash(bee2py.vp2op(hash), 192, v, n)
+        elif level == 256:
+            bee2py.bignParamsStd(params, "1.2.112.0.2.0.34.101.45.3.3")
+            bee2py.bignOidToDER(bee2py.vp2op(der), count, 
+                "1.2.112.0.2.0.34.101.77.13")
+            bee2py.bashHash(bee2py.vp2op(hash), 256, v, n)
+        else:
+            raise ValueError("Incorrect key size")
+        bee2py.memFree(v)
+        c1 = bee2py.sizeTarr_getitem(count, 0)
+        bee2py.delete_sizeTarr(count)
+        err = bee2py.bignVerify(params, bee2py.vp2op(der), c1, 
+            bee2py.vp2op(hash), bee2py.vp2op(sig), bee2py.vp2op(pubkey))
+        bee2py.memFree(pubkey)
+        bee2py.memFree(hash)
+        bee2py.memFree(der)
+        bee2py.memFree(sig)
+        if err != 0:
+            print(err)
+        return err == 0
+    else:
+        return True
 
 if __name__ == "__main__":
     if len(sys.argv) != 2:

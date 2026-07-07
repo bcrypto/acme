@@ -1,7 +1,7 @@
 {
   "save_answers_dir": "output",
-  "private_key": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-  "public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL3t785vrpK3BA1MybmDqmdhIujulXN3_9Jv-g7i3XNp2srMABv47dLivGGzs0GrsKuP0aD35oKxgXYD5Hr_Jqg",
+  "private_key": "AQAAAAAAAAAAAAAAAAAAAA",
+  "public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACTalEEGM8pHlL2CMRmOZF4XYPWUaPJ5Fyf1hb7PPz3aw",
   "requests": [
     {
       "endpoint": "http://localhost:8430/dir",
@@ -23,11 +23,11 @@
       "endpoint": "{newAccount}",
       "method": "POST",
       "jws_header": {
-        "alg":"BIGNS256",
+        "alg":"BIGNS128",
         "jwk": {
           "qty": "OKP",
-          "crv": "BIGNS256", 
-          "x": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL3t785vrpK3BA1MybmDqmdhIujulXN3_9Jv-g7i3XNp2srMABv47dLivGGzs0GrsKuP0aD35oKxgXYD5Hr_Jqg"
+          "crv": "BIGNS128", 
+          "x": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACTalEEGM8pHlL2CMRmOZF4XYPWUaPJ5Fyf1hb7PPz3aw"
         },
         "nonce":"{nonce}",
         "url":"{newAccount}"
@@ -54,7 +54,7 @@
       "endpoint": "{id}",
       "method": "POST",
       "jws_header": {
-        "alg":"BIGNS256",
+        "alg":"BIGNS128",
         "kid":"{id}",
         "nonce":"{nonce}",
         "url":"{id}"
@@ -79,7 +79,7 @@
       "endpoint": "{newOrder}",
       "method": "POST",
       "jws_header": {
-        "alg":"BIGNS256",
+        "alg":"BIGNS128",
         "kid":"{id}",
         "nonce":"{nonce}",
         "url":"{newOrder}"
@@ -110,7 +110,7 @@
       "endpoint": "{orderId}",
       "method": "POST",
       "jws_header": {
-        "alg":"BIGNS256",
+        "alg":"BIGNS128",
         "kid":"{id}",
         "nonce":"{nonce}",
         "url":"{orderId}"
@@ -141,7 +141,7 @@
       "endpoint": "{auth}",
       "method": "POST",
       "jws_header": {
-        "alg":"BIGNS256",
+        "alg":"BIGNS128",
         "kid":"{id}",
         "nonce":"{nonce}",
         "url":"{auth}"
@@ -165,7 +165,7 @@
       "endpoint": "{auth0}",
       "method": "POST",
       "jws_header": {
-        "alg":"BIGNS256",
+        "alg":"BIGNS128",
         "kid":"{id}",
         "nonce":"{nonce}",
         "url":"{auth0}"
@@ -189,7 +189,7 @@
       "endpoint": "{fin}",
       "method": "POST",
       "jws_header": {
-        "alg":"BIGNS256",
+        "alg":"BIGNS128",
         "kid":"{id}",
         "nonce":"{nonce}",
         "url":"{fin}"
@@ -215,7 +215,7 @@
       "endpoint": "{cert}",
       "method": "POST",
       "jws_header": {
-        "alg":"BIGNS256",
+        "alg":"BIGNS128",
         "kid":"{id}",
         "nonce":"{nonce}",
         "url":"{cert}"
@@ -239,7 +239,7 @@
       "endpoint": "{revokeCert}",
       "method": "POST",
       "jws_header": {
-        "alg":"BIGNS256",
+        "alg":"BIGNS128",
         "kid":"{id}",
         "nonce":"{nonce}",
         "url":"{revokeCert}"
@@ -263,7 +263,7 @@
       "endpoint": "{newAuthz}",
       "method": "POST",
       "jws_header": {
-        "alg":"BIGNS256",
+        "alg":"BIGNS128",
         "kid":"{id}",
         "nonce":"{nonce}",
         "url":"{newAuthz}"
@@ -289,7 +289,7 @@
       "endpoint": "{keyChange}",
       "method": "POST",
       "jws_header": {
-        "alg":"BIGNS256",
+        "alg":"BIGNS128",
         "kid":"{id}",
         "nonce":"{nonce}",
         "url":"{keyChange}"
