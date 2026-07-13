@@ -1,0 +1,350 @@
+{
+  "save_answers_dir": "output",
+  "private_key": "AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "public_key": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL3t785vrpK3BA1MybmDqmdhIujulXN3_9Jv-g7i3XNp2srMABv47dLivGGzs0GrsKuP0aD35oKxgXYD5Hr_Jqg",
+  "requests": [
+    {
+      "endpoint": "https://localhost/dir",
+      "method": "GET",
+      "payload": null,
+      "outfile": "directory.json"
+    },
+    {
+      "endpoint": "{newNonce}",
+      "method": "GET",
+      "payload": null,
+      "newNonce": {
+        "file": "directory.json",
+        "jsonpath": "body.newNonce"
+      },
+      "outfile": "nonce.json"
+    },
+    {
+      "endpoint": "{newAccount}",
+      "method": "POST",
+      "jws_header": {
+        "alg":"BIGNS256",
+        "jwk": {
+          "qty": "OKP",
+          "crv": "BIGNS256", 
+          "x": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL3t785vrpK3BA1MybmDqmdhIujulXN3_9Jv-g7i3XNp2srMABv47dLivGGzs0GrsKuP0aD35oKxgXYD5Hr_Jqg"
+        },
+        "nonce":"{nonce}",
+        "url":"{newAccount}"
+      },
+      "payload": {
+        "contact": [
+          "mailto:cert-admin@example.org",
+          "mailto:admin@example.org"
+        ],
+        "termsOfServiceAgreeed": true,
+        "externalAccountBinding": {
+          "protected": {
+            "alg": "hmac-hbelt",
+            "kid": "externalID",
+            "url": "{newAccount}"
+          },
+          "payload": {
+            "qty": "OKP",
+            "crv": "BIGNS256", 
+            "x": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL3t785vrpK3BA1MybmDqmdhIujulXN3_9Jv-g7i3XNp2srMABv47dLivGGzs0GrsKuP0aD35oKxgXYD5Hr_Jqg"
+          },
+          "key": "AQAAAAAAAAAAAAAAAAAAAA"
+        }
+      },
+      "newAccount": {
+        "file": "directory.json",
+        "jsonpath": "body.newAccount"
+      },
+      "nonce": {
+        "file": "nonce.json",
+        "jsonpath": "headers.Replay-Nonce"
+      },
+      "outfile": "account.json"
+    },
+    {
+      "endpoint": "{id}",
+      "method": "POST",
+      "jws_header": {
+        "alg":"BIGNS256",
+        "kid":"{id}",
+        "nonce":"{nonce}",
+        "url":"{id}"
+      },
+      "payload": {
+        "contact": [
+          "mailto:cert-admin@example.org",
+          "mailto:admin@example.org"
+        ]
+      },
+      "id": {
+        "file": "account.json",
+        "jsonpath": "headers.Location"
+      },
+      "nonce": {
+        "file": "nonce.json",
+        "jsonpath": "headers.Replay-Nonce"
+      },
+      "outfile": "id.json"
+    },
+    {
+      "endpoint": "{newOrder}",
+      "method": "POST",
+      "jws_header": {
+        "alg":"BIGNS256",
+        "kid":"{id}",
+        "nonce":"{nonce}",
+        "url":"{newOrder}"
+      },
+      "payload": {
+        "identifiers": [
+          { "type": "dns", "value": "www.example.org" },
+          { "type": "dns", "value": "example.org" }
+        ],
+        "notBefore": "2016-01-01T00:04:00+04:00",
+        "notAfter": "2016-01-08T00:04:00+04:00"
+      },
+      "id": {
+        "file": "account.json",
+        "jsonpath": "headers.Location"
+      },
+      "newOrder": {
+        "file": "directory.json",
+        "jsonpath": "body.newOrder"
+      },
+      "nonce": {
+        "file": "nonce.json",
+        "jsonpath": "headers.Replay-Nonce"
+      },
+      "outfile": "newOrder.json"
+    },
+    {
+      "endpoint": "{orderId}",
+      "method": "POST",
+      "jws_header": {
+        "alg":"BIGNS256",
+        "kid":"{id}",
+        "nonce":"{nonce}",
+        "url":"{orderId}"
+      },
+      "payload": {
+        "identifiers": [
+          { "type": "dns", "value": "www.example.org" },
+          { "type": "dns", "value": "example.org" }
+        ],
+        "notBefore": "2016-01-01T00:04:00+04:00",
+        "notAfter": "2016-01-08T00:04:00+04:00"
+      },
+      "id": {
+        "file": "account.json",
+        "jsonpath": "headers.Location"
+      },
+      "orderId": {
+        "file": "newOrder.json",
+        "jsonpath": "headers.Location"
+      },
+      "nonce": {
+        "file": "nonce.json",
+        "jsonpath": "headers.Replay-Nonce"
+      },
+      "outfile": "order.json"
+    },
+    {
+      "endpoint": "{auth}",
+      "method": "POST",
+      "jws_header": {
+        "alg":"BIGNS256",
+        "kid":"{id}",
+        "nonce":"{nonce}",
+        "url":"{auth}"
+      },
+      "payload": "",
+      "id": {
+        "file": "account.json",
+        "jsonpath": "headers.Location"
+      },
+      "auth": {
+        "file": "newOrder.json",
+        "jsonpath": "body.authorizations[0]"
+      },
+      "nonce": {
+        "file": "nonce.json",
+        "jsonpath": "headers.Replay-Nonce"
+      },
+      "outfile": "auth.json"
+    },
+    {
+      "endpoint": "{auth0}",
+      "method": "POST",
+      "jws_header": {
+        "alg":"BIGNS256",
+        "kid":"{id}",
+        "nonce":"{nonce}",
+        "url":"{auth0}"
+      },
+      "payload": "",
+      "id": {
+        "file": "account.json",
+        "jsonpath": "headers.Location"
+      },
+      "auth0": {
+        "file": "auth.json",
+        "jsonpath": "body.challenges[0].url"
+      },
+      "nonce": {
+        "file": "nonce.json",
+        "jsonpath": "headers.Replay-Nonce"
+      },
+      "outfile": "auth0.json"
+    },
+    {
+      "endpoint": "{fin}",
+      "method": "POST",
+      "jws_header": {
+        "alg":"BIGNS256",
+        "kid":"{id}",
+        "nonce":"{nonce}",
+        "url":"{fin}"
+      },
+      "payload": {
+        "csr": "MIIBPTCBxAIBADBFMQ...FS6aKdZeGsysoCo4H9P"
+      },
+      "id": {
+        "file": "account.json",
+        "jsonpath": "headers.Location"
+      },
+      "fin": {
+        "file": "newOrder.json",
+        "jsonpath": "body.finalize"
+      },
+      "nonce": {
+        "file": "nonce.json",
+        "jsonpath": "headers.Replay-Nonce"
+      },
+      "outfile": "fin.json"
+    },
+    {
+      "endpoint": "{cert}",
+      "method": "POST",
+      "jws_header": {
+        "alg":"BIGNS256",
+        "kid":"{id}",
+        "nonce":"{nonce}",
+        "url":"{cert}"
+      },
+      "payload": "",
+      "id": {
+        "file": "account.json",
+        "jsonpath": "headers.Location"
+      },
+      "cert": {
+        "file": "fin.json",
+        "jsonpath": "body.certificate"
+      },
+      "nonce": {
+        "file": "nonce.json",
+        "jsonpath": "headers.Replay-Nonce"
+      },
+      "outfile": "cert.json"
+    },
+    {
+      "endpoint": "{revokeCert}",
+      "method": "POST",
+      "jws_header": {
+        "alg":"BIGNS256",
+        "kid":"{id}",
+        "nonce":"{nonce}",
+        "url":"{revokeCert}"
+      },
+      "payload": "",
+      "id": {
+        "file": "account.json",
+        "jsonpath": "headers.Location"
+      },
+      "revokeCert": {
+        "file": "directory.json",
+        "jsonpath": "body.revokeCert"
+      },
+      "nonce": {
+        "file": "nonce.json",
+        "jsonpath": "headers.Replay-Nonce"
+      },
+      "outfile": "revoke.json"
+    },
+    {
+      "endpoint": "{newAuthz}",
+      "method": "POST",
+      "jws_header": {
+        "alg":"BIGNS256",
+        "kid":"{id}",
+        "nonce":"{nonce}",
+        "url":"{newAuthz}"
+      },
+      "payload": {
+        "identifier": {"type": "dns", "value": "www.example.org"}
+      },
+      "id": {
+        "file": "account.json",
+        "jsonpath": "headers.Location"
+      },
+      "newAuthz": {
+        "file": "directory.json",
+        "jsonpath": "body.newAuthz"
+      },
+      "nonce": {
+        "file": "nonce.json",
+        "jsonpath": "headers.Replay-Nonce"
+      },
+      "outfile": "newAuthz.json"
+    },
+    {
+      "endpoint": "{keyChange}",
+      "method": "POST",
+      "jws_header": {
+        "alg":"BIGNS256",
+        "kid":"{id}",
+        "nonce":"{nonce}",
+        "url":"{keyChange}"
+      },
+      "payload": "JWS(newKey)",
+      "id": {
+        "file": "account.json",
+        "jsonpath": "headers.Location"
+      },
+      "keyChange": {
+        "file": "directory.json",
+        "jsonpath": "body.keyChange"
+      },
+      "nonce": {
+        "file": "nonce.json",
+        "jsonpath": "headers.Replay-Nonce"
+      },
+      "outfile": "keyChange.json"
+    },
+    {
+      "endpoint": "https://localhost/error",
+      "method": "POST",
+      "jws_header": {
+        "alg":"BIGNS256",
+        "kid":"{id}",
+        "nonce":"{nonce}",
+        "url":"https://localhost/error"
+      },
+      "payload": {
+        "contact": [
+          "mailto:cert-admin@example.org",
+          "mailto:admin@example.org"
+        ]
+      },
+      "id": {
+        "file": "account.json",
+        "jsonpath": "headers.Location"
+      },
+      "nonce": {
+        "file": "nonce.json",
+        "jsonpath": "headers.Replay-Nonce"
+      },
+      "outfile": "error.json"
+    }
+  ]
+}

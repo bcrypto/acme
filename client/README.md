@@ -1,16 +1,22 @@
-# Тестовый клиент ACME
+# Test client ACME
 
-Установка зависимостей:
+Requirements:
 ```bash
 pip install requests
 ```
 
-Запуск тестового клиента:
+Start:
 ```bash
 python3 client.py config/config.json
 ```
 
-Проверка поиска и деактивации учетной записи:
+Search and deactivation of account:
 ```bash
 python3 client.py config/etc.json
+```
+
+# Test client ACME (TLS)
+Start in TLS mode:
+```bash
+bash ../scripts/py.sh client.py config/tlsconfig.json
 ```

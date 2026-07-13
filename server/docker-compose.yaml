@@ -1,0 +1,47 @@
+services:
+  flask:
+    # Путь до Dockerfile
+    build: .
+    image: btls/acme
+    # Имя для создаваемого контейнера
+    container_name: flask
+    # Создание переменных окружения в контейнере
+
+    environment:
+      - FLASK_APP=/acme/server.py
+      # для отладки (при запуске в релиз убрать!)
+      - FLASK_ENV=development
+      ## Позволяет отслеживать процесс работы приложения в командной строке
+      - PYTHONUNBUFFERED=True                   
+      ##
+    # Перезапускаем сервис в случае падения 
+    restart: on-failure
+    # Прокладывам путь для файлов. Все файлы, которые хранятся у вас в 
+    # директории ./flask, появятся в директории контейнера /flask
+    # Открываем порт в контейнер
+    # Порт, который будет смотреть наружу : порт который используется внутри контейнера
+    command: tail -f /dev/null # flask run --host=0.0.0.0 --port=5000
+    ports:
+      - "8080:5000"
+    networks:
+      back:
+        aliases:
+          - flask-app
+  tls256:
+    build: ./btls256
+    image: btls/tls256
+    container_name: tls256
+    depends_on:
+      - flask
+    ports:
+      - "80:80"
+      - "443:443"
+    command: tail -f /dev/null
+    networks:
+      back:
+        aliases:
+          - tls256  
+
+networks:
+  back:
+    driver: bridge
