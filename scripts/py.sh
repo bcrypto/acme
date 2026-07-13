@@ -1,6 +1,7 @@
 #!/usr/bin/env sh
 
 scripts_dir="$( dirname "${BASH_SOURCE[0]}" )"
+# This path should be to builded bee2evp directory
 bee2evp=$(cd $scripts_dir/../../bee2evp && pwd)
 build_root=$bee2evp/build
 local=${BEE2EVP_INSTALL_DIR:-$build_root/local}
