@@ -25,7 +25,7 @@
       "jws_header": {
         "alg":"BIGNS192",
         "jwk": {
-          "qty": "OKP",
+          "kty": "OKP",
           "crv": "BIGNS192", 
           "x": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAUcQz9zHLXur5QiprJz5AhFXTsWae50kFoP-G3BGacjqJvy1DfhEwY56eLqgkgkNd"
         },
@@ -45,7 +45,7 @@
             "url": "{newAccount}"
           },
           "payload": {
-            "qty": "OKP",
+            "kty": "OKP",
             "crv": "BIGNS256", 
             "x": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL3t785vrpK3BA1MybmDqmdhIujulXN3_9Jv-g7i3XNp2srMABv47dLivGGzs0GrsKuP0aD35oKxgXYD5Hr_Jqg"
           },
