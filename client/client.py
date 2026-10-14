@@ -1,10 +1,11 @@
-import json
 import base64
-import sys
+import json
 import os
 import string
+import sys
 
 import requests
+
 try:
     import bee2py
 except ImportError:
@@ -116,8 +117,11 @@ def load_previous(file, jsonpath):
             else:
                 data = data.get(p)
         return data
-    except Exception as e:
+    except OSError as e:
         print(f"Failed to load {jsonpath} from {file}: {e}")
+        return None
+    except ValueError as e:
+        print(f"Incorrect format of file {file}: {e}")
         return None
 
 def replace_placeholders(text:str, config, outdir) -> str:
@@ -265,7 +269,7 @@ def run_tests(config, outdir, signer):
 
             print(f"Saved response to {outpath}")
 
-        except Exception as e:
+        except requests.exceptions.RequestException as e:
             print(f"Error requesting {url}: {e}")
 
 if __name__ == "__main__":

@@ -1,10 +1,10 @@
-import json
-import sys
-import os
-#import datetime
 import base64
+import json
+import os
+import sys
 
 from flask import Flask, jsonify, make_response, request
+
 try:
     import bee2py
 except ImportError:
@@ -93,7 +93,7 @@ def jws_decode(body:dict, resp_hdrs:dict) -> dict:
     payload = load_dict(body['payload'])
     jwk = header.get("jwk")
     if jwk is not None:
-        KEYS[resp_hdrs["Location"]] = jwk["x"]
+        KEYS[resp_hdrs["Location"]] = jwk.get("x")
         print(f"Keys: {KEYS}")
         kid = resp_hdrs["Location"]
     else:
