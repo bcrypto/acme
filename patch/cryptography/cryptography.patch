@@ -1,0 +1,181 @@
+diff --git a/.gitignore b/.gitignore
+index 1d4ebfb..8449887 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -16,3 +16,5 @@ target/
+ .rust-cov/
+ *.lcov
+ *.profdata
++*.whl
++*.tar.gz
+diff --git a/Cargo.toml b/Cargo.toml
+index 41deb3e..95c694f 100644
+--- a/Cargo.toml
++++ b/Cargo.toml
+@@ -36,3 +36,4 @@ self_cell = "1"
+ 
+ [profile.release]
+ overflow-checks = true
++strip = false
+diff --git a/src/_cffi_src/openssl/bio.py b/src/_cffi_src/openssl/bio.py
+index c0ff6d5..f1e0a8d 100644
+--- a/src/_cffi_src/openssl/bio.py
++++ b/src/_cffi_src/openssl/bio.py
+@@ -19,6 +19,7 @@ int BIO_free(BIO *);
+ BIO *BIO_new_file(const char *, const char *);
+ int BIO_read(BIO *, void *, int);
+ int BIO_write(BIO *, const void *, int);
++size_t BIO_ctrl_pending(BIO *b);
+ 
+ BIO *BIO_new(BIO_METHOD *);
+ const BIO_METHOD *BIO_s_mem(void);
+diff --git a/src/_cffi_src/openssl/evp.py b/src/_cffi_src/openssl/evp.py
+index 2d66aaf..cf01218 100644
+--- a/src/_cffi_src/openssl/evp.py
++++ b/src/_cffi_src/openssl/evp.py
+@@ -13,6 +13,16 @@ typedef ... EVP_CIPHER;
+ typedef ... EVP_MD;
+ 
+ typedef ... EVP_PKEY;
++typedef struct ossl_param_st {
++    const char *key;
++    unsigned int data_type;
++    void *data;
++    size_t data_size;
++    size_t return_size;
++} OSSL_PARAM;
++typedef ... EVP_PKEY_ASN1_METHOD;
++typedef ... EVP_PKEY_CTX;
++typedef ... EVP_MD_CTX;
+ static const int EVP_PKEY_RSA;
+ static const int EVP_PKEY_DSA;
+ static const int EVP_PKEY_DH;
+@@ -30,6 +40,54 @@ const EVP_MD *EVP_get_digestbyname(const char *);
+ EVP_PKEY *EVP_PKEY_new(void);
+ void EVP_PKEY_free(EVP_PKEY *);
+ int EVP_PKEY_type(int);
++
++EVP_PKEY_CTX *EVP_PKEY_CTX_new_from_name(void *libctx, const char *name,
++    const char *propquery);
++void EVP_PKEY_CTX_free(EVP_PKEY_CTX *ctx);
++EVP_PKEY_CTX *EVP_PKEY_CTX_new_id(int id, ENGINE *e);
++int EVP_PKEY_CTX_ctrl_str(EVP_PKEY_CTX *ctx, const char *type,
++    const char *value);
++
++const EVP_PKEY_ASN1_METHOD *EVP_PKEY_asn1_find_str(ENGINE **pe,
++    const char *str, int len);
++int EVP_PKEY_asn1_get0_info(int *ppkey_id, int *pkey_base_id,
++    int *ppkey_flags, const char **pinfo, const char **ppem_str,
++    const EVP_PKEY_ASN1_METHOD *ameth);
++
++OSSL_PARAM OSSL_PARAM_construct_utf8_string(const char *key,
++    char *buf, size_t bsize);
++OSSL_PARAM OSSL_PARAM_construct_end(void);
++
++int EVP_PKEY_keygen_init(EVP_PKEY_CTX *ctx);
++int EVP_PKEY_keygen(EVP_PKEY_CTX *ctx, EVP_PKEY **ppkey);
++
++int i2d_PrivateKey(EVP_PKEY *a, unsigned char **pp);
++
++EVP_PKEY *EVP_PKEY_dup(EVP_PKEY *pkey);
++int EVP_PKEY_get_raw_public_key(const EVP_PKEY *pkey, unsigned char *pub,
++    size_t *len);
++int i2d_PUBKEY(EVP_PKEY *a, unsigned char **pp);
++EVP_PKEY *d2i_PUBKEY(EVP_PKEY **a, const unsigned char **pp, long length);
++int EVP_PKEY_get_id(const EVP_PKEY *pkey);
++EVP_PKEY *EVP_PKEY_new_raw_public_key(int type, void *engine,
++    const unsigned char *key, size_t keylen);
++EVP_PKEY *EVP_PKEY_new_raw_private_key(int type, ENGINE *e,
++    const unsigned char *priv, size_t len);
++
++int EVP_DigestVerifyInit(EVP_MD_CTX *ctx, void **pctx, const EVP_MD *type, 
++    void *e, EVP_PKEY *pkey);
++int EVP_DigestVerify(EVP_MD_CTX *ctx, const unsigned char *sig, size_t siglen,
++    const unsigned char *tbs, size_t tbslen);
++
++int EVP_DigestSignInit(EVP_MD_CTX *ctx, void **pctx, const EVP_MD *type, 
++    void *e, EVP_PKEY *pkey);
++
++int EVP_DigestSign(EVP_MD_CTX *ctx, unsigned char *sig, size_t *siglen,
++    const unsigned char *tbs, size_t tbslen);
++
++EVP_MD_CTX *EVP_MD_CTX_new(void);
++void EVP_MD_CTX_free(EVP_MD_CTX *ctx);
++
+ RSA *EVP_PKEY_get1_RSA(EVP_PKEY *);
+ 
+ int EVP_PKEY_set1_DSA(EVP_PKEY *, DSA *);
+diff --git a/src/cryptography/hazmat/primitives/asymmetric/types.py b/src/cryptography/hazmat/primitives/asymmetric/types.py
+index dbf4b74..30646b9 100644
+--- a/src/cryptography/hazmat/primitives/asymmetric/types.py
++++ b/src/cryptography/hazmat/primitives/asymmetric/types.py
+@@ -17,6 +17,7 @@ from cryptography.hazmat.primitives.asymmetric import (
+     rsa,
+     x448,
+     x25519,
++    provided,
+ )
+ 
+ # Every asymmetric key type. These use the private DH aliases so that
+@@ -35,6 +36,7 @@ PublicKeyTypes = typing.Union[
+     mlkem.MLKEM1024PublicKey,
+     x25519.X25519PublicKey,
+     x448.X448PublicKey,
++    provided.ProviderPublicKey,
+ ]
+ # Every asymmetric key type
+ PrivateKeyTypes = typing.Union[
+@@ -51,6 +53,7 @@ PrivateKeyTypes = typing.Union[
+     ec.EllipticCurvePrivateKey,
+     x25519.X25519PrivateKey,
+     x448.X448PrivateKey,
++    provided.ProviderPrivateKey,
+ ]
+ # Just the key types we allow to be used for x509 signing. This mirrors
+ # the certificate public key types
+@@ -63,6 +66,7 @@ CertificateIssuerPrivateKeyTypes = typing.Union[
+     mldsa.MLDSA44PrivateKey,
+     mldsa.MLDSA65PrivateKey,
+     mldsa.MLDSA87PrivateKey,
++    provided.ProviderPrivateKey,
+ ]
+ # Just the key types we allow to be used for x509 signing. This mirrors
+ # the certificate private key types
+@@ -75,6 +79,7 @@ CertificateIssuerPublicKeyTypes = typing.Union[
+     mldsa.MLDSA44PublicKey,
+     mldsa.MLDSA65PublicKey,
+     mldsa.MLDSA87PublicKey,
++    provided.ProviderPublicKey,
+ ]
+ # This type removes DHPublicKey. x448/x25519/mlkem can be a public key
+ # but cannot be used in signing so they are allowed here.
+@@ -91,4 +96,5 @@ CertificatePublicKeyTypes = typing.Union[
+     mlkem.MLKEM1024PublicKey,
+     x25519.X25519PublicKey,
+     x448.X448PublicKey,
++    provided.ProviderPublicKey,
+ ]
+diff --git a/src/cryptography/hazmat/primitives/hashes.py b/src/cryptography/hazmat/primitives/hashes.py
+index 50ed355..d02d3d1 100644
+--- a/src/cryptography/hazmat/primitives/hashes.py
++++ b/src/cryptography/hazmat/primitives/hashes.py
+@@ -355,3 +355,19 @@ class SM3(HashAlgorithm):
+             return NotImplemented
+ 
+         return True
++
++class Provided(HashAlgorithm):
++    name = "sha256"
++    digest_size = 32
++    block_size = 64
++
++    def __init__(self, name: str, digest_size: int, block_size: int):
++        self.name = name
++        self.digest_size = digest_size
++        self.block_size = block_size
++
++    def __eq__(self, other: object) -> bool:
++        if not isinstance(other, Provided) or self.name != other.name:
++            return NotImplemented
++
++        return True

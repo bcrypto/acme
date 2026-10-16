@@ -223,5 +223,8 @@ __marimo__/
 # Output folders
 output/
 
+# Build folders
+build/
+
 # Test configs
 test/
